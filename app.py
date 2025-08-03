@@ -8,6 +8,10 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 from pathlib import Path
 
+# === AGREGADO: servir estáticos ===
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse  # también se importa luego, no afecta
+
 # ---------- Config ----------
 TZ = ZoneInfo(os.getenv("TZ", "America/Santiago"))
 # En Render no se puede escribir en /data sin Disk; usamos /tmp (efímero)
@@ -39,6 +43,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# === AGREGADO: Frontend estático (sirve / con index.html) ===
+FRONT_DIR = Path(__file__).parent / "frontend"
+app.mount("/static", StaticFiles(directory=FRONT_DIR), name="static")
+
+@app.get("/", include_in_schema=False)
+def root():
+    index_file = FRONT_DIR / "index.html"
+    if not index_file.exists():
+        return {"ok": False, "error": "Falta frontend/index.html"}
+    return FileResponse(index_file)
 
 # ---------- Helpers ----------
 def load_productos() -> pd.DataFrame:
