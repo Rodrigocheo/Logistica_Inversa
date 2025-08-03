@@ -252,5 +252,16 @@
       }finally{ setLoading(false); }
     });
   </script>
+  <script>
+    // === Configura tu API pública. "" = mismo origen ===
+    const API_BASE = "https://logistica-inversa.onrender.com"; // URL pública de tu API en Render
+
+    const $ = (id) => document.getElementById(id);
+    const vibrate = (ms) => (navigator.vibrate ? navigator.vibrate(ms) : null);
+
+    $('apiBase').textContent = API_BASE || 'mismo origen';
+    ...
+</script>
+
 </body>
 </html>
