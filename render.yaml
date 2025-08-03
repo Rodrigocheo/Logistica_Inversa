@@ -1,0 +1,23 @@
+
+services:
+  - type: web
+    name: escaner-api-cloud
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: TZ
+        value: America/Santiago
+      - key: DATA_DIR
+        value: /data
+      - key: PROD_SHEET
+        value: Hoja2
+      - key: HIST_SHEET
+        value: Escaneos
+      - key: ALLOW_ORIGINS
+        value: "*"
+    disk:
+      name: escaner-data
+      mountPath: /data
+      sizeGB: 1
