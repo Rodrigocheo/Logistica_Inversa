@@ -127,6 +127,7 @@ async def upload_maestro(file: UploadFile = File(...), sheet: Optional[str] = Fo
         dest.unlink()
     Path(tmp).replace(dest)
     return {"ok": True, "maestro": str(dest)}
+
 # ---- Vistas en línea + descarga ----
 from fastapi.responses import HTMLResponse, FileResponse, PlainTextResponse, JSONResponse
 
@@ -137,8 +138,6 @@ def ver_historico():
         return "<h3>No hay histórico aún.</h3>"
 
     df = pd.read_excel(p, sheet_name=HIST_SHEET)
-
-    # HTML simple con estilos y botones de descarga
     table_html = df.to_html(index=False, border=0)
     return f"""
     <html>
@@ -181,3 +180,25 @@ def historico_csv():
         return "Aun no hay historico"
     df = pd.read_excel(p, sheet_name=HIST_SHEET)
     return df.to_csv(index=False)
+
+@app.get("/producto/{codigo}")
+def obtener_producto(codigo: str):
+    dfp = load_productos()
+    code = codigo.strip()
+    fila = dfp[dfp[COL_COD] == code]
+    if fila.empty:
+        return {
+            "found": False,
+            "codigo": code,
+            "descripcion": "DESCONOCIDO",
+            "precio": None,
+            "centro_sugerido": None
+        }
+    r = fila.iloc[0]
+    return {
+        "found": True,
+        "codigo": code,
+        "descripcion": r.get(COL_DESC, None),
+        "precio": r.get(COL_PREC, None),
+        "centro_sugerido": r.get(COL_CENT, None)
+    }
