@@ -1,267 +1,93 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Komatsu – RF Escáner</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KOMATSU · Cummins – RF Escáner</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, sans-serif; }
-    body { margin: 0; background: #f6f7f9; color: #111; }
-    .wrap { max-width: 560px; margin: 0 auto; padding: 16px; }
-    .card { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
-    .logo { display:flex; align-items:center; gap:10px; margin: 4px 0 14px; }
-    .logo img { height: 26px; }
-    .brand { font-weight: 900; letter-spacing: .5px; color:#053b8d; }
-    label { display:block; font-size: 13px; color:#333; margin: 12px 0 6px; }
-    input, button { width:100%; padding: 16px 14px; border:1px solid #d8dbe2; border-radius:14px; font-size:18px; box-sizing: border-box; }
-    input:disabled { background:#f2f2f2; }
-    button { background:#053b8d; color:#fff; border:none; font-weight:700; letter-spacing:.3px; height:56px; }
-    button.secondary { background:#e9eef8; color:#053b8d; border:1px solid #c9d6f3; }
-    button:disabled { opacity:.55; }
-    .row { display:flex; gap:10px; }
-    .row > div { flex:1; }
-    .toolbar { display:flex; gap:10px; margin: 8px 0 0; }
-    .msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; padding: 12px 16px; border-radius: 12px; font-size:14px; display:none; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
-    .ok { background:#0a6b2c; color:#fff; }
-    .err { background:#b42318; color:#fff; }
-    .info { background:#1f4fcc; color:#fff; }
-    .loading { animation: pulse 1.2s ease-in-out infinite; }
-    @keyframes pulse { 0%{opacity:.7} 50%{opacity:1} 100%{opacity:.7} }
-    .foot { text-align:center; font-size:12px; color:#6a7180; margin-top:12px; }
-    .kbd { font-variant-numeric: tabular-nums; letter-spacing:.5px; }
-    .hint { font-size:12px; color:#6a7180; margin-top:6px; }
-    .small { font-size:12px; color:#6a7180; }
-    video { width:100%; max-height: 280px; border-radius: 12px; display:none; margin-top:8px; background:#000; }
-    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#eef2ff; color:#1f4fcc; }
+    body { background: #f9f9f9; font-family: sans-serif; }
+    .card { max-width: 480px; margin: 2rem auto; border-radius: 1rem; box-shadow: 0 0 10px #ccc; }
+    .btn-primary { background-color: #002D72; border: none; }
+    .btn-primary:hover { background-color: #001F4D; }
+    .logo-title { text-align: center; font-size: 1.4rem; font-weight: bold; color: #002D72; padding: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+    .logo-title span { color: black; font-weight: 600; }
+    .input-group-text { background: #eaeaea; }
+    #descripcion { background: #f1f1f1; color: #333; font-weight: bold; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="logo">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="#053b8d" aria-hidden="true"><path d="M12 2l3.5 7.1L23 9l-5.5 5.1L19 22l-7-4-7 4 1.5-7.9L1 9l7.5-.9z"/></svg>
-      <div class="brand">KOMATSU · RF Escáner</div>
+  <div class="card p-4">
+    <div class="logo-title">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Komatsu_logo.svg" alt="Komatsu" height="30">
+      <span>Cummins</span>
     </div>
 
-    <div class="card">
-      <form id="frm" autocomplete="off">
-        <label for="codigo">Producto (Código) <span class="pill" id="sourceTag">API</span></label>
-        <input id="codigo" class="kbd" placeholder="Escanee o escriba" inputmode="text" autocapitalize="off" autocomplete="off" autofocus/>
-        <div class="toolbar">
-          <button id="btnScan" type="button" class="secondary">📷 Escanear</button>
-          <button id="btnStop" type="button" class="secondary" style="display:none">✖️ Detener</button>
-          <button id="btnToggleFuente" type="button" class="secondary">Usar Maestro Local</button>
-        </div>
-        <video id="preview" playsinline></video>
-        <div class="hint">Enter en código = buscar descripción · Enter en cantidad = guardar</div>
+    <label for="codigo">Producto (Código)</label>
+    <input id="codigo" class="form-control mb-2" placeholder="Escanee o escriba" autofocus>
 
-        <label for="descripcion">Descripción</label>
-        <input id="descripcion" placeholder="DESCONOCIDO" disabled />
-
-        <div class="row">
-          <div>
-            <label for="cantidad">Cantidad</label>
-            <input id="cantidad" type="number" min="1" value="1" inputmode="numeric"/>
-          </div>
-        </div>
-
-        <button id="btnGuardar" type="submit">Guardar</button>
-      </form>
-      <div class="hint" style="margin-top:10px">
-        Maestro local: <span id="localInfo">vacío</span>
-        <br/>
-        <input type="file" id="fileLocal" accept=".csv,.json" style="margin-top:6px"/>
-        <div class="small">Sube un <b>CSV</b> con columnas <code>Codigo,Descripcion</code> o un <b>JSON</b> de pares {"Codigo":"Descripcion"}. Se guardará localmente para uso <b>sin Internet</b>.</div>
-      </div>
+    <div class="d-flex gap-2 mb-2">
+      <button id="escanear" class="btn btn-outline-secondary w-50">📷 Escanear</button>
     </div>
 
-    <div class="foot">API: <span id="apiBase"></span></div>
+    <label for="descripcion">Descripción</label>
+    <input id="descripcion" class="form-control mb-2" disabled value="DESCONOCIDO">
+
+    <label for="cantidad">Cantidad</label>
+    <input id="cantidad" class="form-control mb-3" type="number" value="1">
+
+    <button id="guardar" class="btn btn-primary w-100">Guardar</button>
+
+    <small class="text-muted mt-2 d-block text-center">Se guardará en línea con API Komatsu – Cummins</small>
   </div>
 
-  <div id="toastOK" class="msg ok"></div>
-  <div id="toastERR" class="msg err"></div>
-  <div id="toastINFO" class="msg info"></div>
+  <div id="toastOK" class="position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">Guardado correctamente.</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
 
   <script>
-    // === Configura tu API pública. "" = mismo origen ===
-    const API_BASE = ""; // Ej.: "https://tu-api.onrender.com"
-
+    const API_BASE = "https://logistica-inversa.onrender.com";
     const $ = (id) => document.getElementById(id);
-    const vibrate = (ms) => (navigator.vibrate ? navigator.vibrate(ms) : null);
+    const vibrate = (ms) => navigator.vibrate?.(ms);
 
-    $('apiBase').textContent = API_BASE || 'mismo origen';
-
-    function toast(el, text){ el.textContent = text; el.style.display = 'block'; setTimeout(()=> el.style.display='none', 2200); }
-    function setLoading(is){ $('btnGuardar').disabled = is; $('btnGuardar').classList.toggle('loading', is); }
-
-    // ======= Maestro Local (offline) =======
-    let maestroLocal = {}; // {Codigo: Descripcion}
-    let usarLocal = false;
-    const LOCAL_KEY = 'rf_maestro_local_v1';
-
-    function loadLocal(){
-      try{ maestroLocal = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}'); }
-      catch{ maestroLocal = {}; }
-      const n = Object.keys(maestroLocal).length;
-      $('localInfo').textContent = n ? `${n} códigos` : 'vacío';
-    }
-    loadLocal();
-
-    $('btnToggleFuente').addEventListener('click', ()=>{
-      usarLocal = !usarLocal;
-      $('btnToggleFuente').textContent = usarLocal ? 'Usar API' : 'Usar Maestro Local';
-      $('sourceTag').textContent = usarLocal ? 'LOCAL' : 'API';
-      toast($('toastINFO'), usarLocal ? 'Fuente: Maestro local' : 'Fuente: API');
-    });
-
-    $('fileLocal').addEventListener('change', async (e)=>{
-      const file = e.target.files[0];
-      if(!file) return;
-      try{
-        const text = await file.text();
-        let map = {};
-        if(file.name.endsWith('.json')){
-          const obj = JSON.parse(text);
-          // si viene como array de objetos, intenta mapear
-          if(Array.isArray(obj)){
-            for(const r of obj){ if(r.Codigo && r.Descripcion){ map[r.Codigo.toString().trim()] = String(r.Descripcion).trim(); } }
-          }else{
-            map = obj;
-          }
-        } else { // CSV simple
-          const lines = text.split(/\r?\n/).filter(Boolean);
-          const header = lines.shift().split(',').map(s=>s.trim());
-          const iCod = header.findIndex(h=>/codigo/i.test(h));
-          const iDes = header.findIndex(h=>/desc/i.test(h));
-          for(const ln of lines){
-            const cols = ln.split(',');
-            const c = (cols[iCod]||'').toString().trim();
-            const d = (cols[iDes]||'').toString().trim();
-            if(c) map[c] = d || 'DESCONOCIDO';
-          }
-        }
-        maestroLocal = map;
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(maestroLocal));
-        loadLocal();
-        usarLocal = true;
-        $('btnToggleFuente').textContent = 'Usar API';
-        $('sourceTag').textContent = 'LOCAL';
-        toast($('toastOK'), 'Maestro local cargado');
-      }catch(err){ toast($('toastERR'), 'Error al cargar maestro: '+err.message); }
-    });
-
-    // ======= Escaneo por cámara (BarcodeDetector) =======
-    let stream=null, scanning=false, rafId=null;
-
-    async function startScan(){
-      if(!('BarcodeDetector' in window)){
-        toast($('toastERR'), 'El lector no es compatible, intenta con ingreso manual.');
-        return;
-      }
-      try{
-        const formats = ['code_128','ean_13','ean_8','code_39','qr_code','itf','codabar','upc_a','upc_e'];
-        const detector = new BarcodeDetector({ formats });
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        $('preview').srcObject = stream; $('preview').style.display='block'; await $('preview').play();
-        $('btnScan').style.display='none'; $('btnStop').style.display='inline-block'; scanning=true;
-        const scanLoop = async ()=>{
-          if(!scanning) return;
-          try{
-            const codes = await detector.detect($('preview'));
-            if(codes && codes.length){
-              const code = (codes[0].rawValue||'').trim();
-              if(code){
-                $('codigo').value = code; vibrate(30);
-                await autocompletarDescripcion(code);
-                stopScan();
-                $('cantidad').focus();
-                return;
-              }
-            }
-          }catch(e){}
-          rafId = requestAnimationFrame(scanLoop);
-        };
-        scanLoop();
-      }catch(err){
-        toast($('toastERR'), 'No se pudo abrir la cámara');
-      }
-    }
-    function stopScan(){
-      scanning=false; cancelAnimationFrame(rafId); rafId=null;
-      if(stream){ for(const t of stream.getTracks()) t.stop(); stream=null; }
-      $('preview').pause(); $('preview').removeAttribute('src'); $('preview').style.display='none';
-      $('btnScan').style.display='inline-block'; $('btnStop').style.display='none';
-    }
-
-    $('btnScan').addEventListener('click', startScan);
-    $('btnStop').addEventListener('click', stopScan);
-
-    // ======= API helpers =======
-    function timeoutFetch(url, opts={}, ms=10000){
-      const controller = new AbortController();
-      const id = setTimeout(()=> controller.abort(), ms);
-      return fetch(url, { ...opts, signal: controller.signal }).finally(()=> clearTimeout(id));
-    }
-    async function fetchJSON(url){
-      const res = await timeoutFetch(url);
-      if(!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-      return res.json();
-    }
-    async function postJSON(url, body){
-      const res = await timeoutFetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }, 15000);
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok || data?.ok === false){ throw new Error(data?.error || res.statusText); }
-      return data;
-    }
-
-    // ======= Lógica de descripción (API o Local) =======
-    async function autocompletarDescripcion(codigo){
-      if(!codigo){ $('descripcion').value = ''; return; }
-      if(usarLocal){
-        const d = maestroLocal[codigo] || 'DESCONOCIDO';
-        $('descripcion').value = d;
-        return;
-      }
-      try{
-        const d = await fetchJSON(`${API_BASE}/producto/${encodeURIComponent(codigo)}`);
-        $('descripcion').value = d?.descripcion || 'DESCONOCIDO';
-      }catch(e){ $('descripcion').value = 'DESCONOCIDO'; }
-    }
-
-    // ======= UX =======
-    $('codigo').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); e.target.blur(); } });
-    $('cantidad').addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); $('frm').requestSubmit(); } });
-    $('codigo').addEventListener('blur', (e)=> autocompletarDescripcion(e.target.value.trim()));
-    $('codigo').addEventListener('change', (e)=> autocompletarDescripcion(e.target.value.trim()));
-
-    // ======= Guardar =======
-    $('frm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
+    $('guardar').addEventListener('click', async () => {
       const codigo = $('codigo').value.trim();
-      const cantidad = parseInt($('cantidad').value, 10) || 0;
-      if(!codigo || cantidad < 1){ toast($('toastERR'), 'Completa código y cantidad válidos.'); vibrate(80); return; }
-      setLoading(true);
-      try{
-        const data = await postJSON(`${API_BASE}/scan`, { codigo, cantidad, usuario: null });
-        const s = data?.saved || {};
-        toast($('toastOK'), `Guardado · ${s.Codigo||codigo} · x${s.Cantidad||cantidad}`);
-        vibrate(30);
-        $('cantidad').value = 1; $('codigo').select();
-      }catch(err){
-        toast($('toastERR'), `Error: ${err.message}`);
-        vibrate([50,40,50]);
-      }finally{ setLoading(false); }
+      const cantidad = parseInt($('cantidad').value);
+
+      if (!codigo || isNaN(cantidad)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo, cantidad, usuario: null })
+        });
+        const data = await res.json();
+        if (data.saved) {
+          $('descripcion').value = data.saved.Descripcion || 'DESCONOCIDO';
+          new bootstrap.Toast($('#toastOK')).show();
+          vibrate(50);
+        }
+      } catch (err) {
+        alert('Error al guardar');
+        vibrate([50,50]);
+      }
+    });
+
+    $('codigo').addEventListener('change', async () => {
+      const codigo = $('codigo').value.trim();
+      if (!codigo) return;
+      try {
+        const res = await fetch(`${API_BASE}/producto/${codigo}`);
+        const data = await res.json();
+        $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
+      } catch {
+        $('descripcion').value = 'DESCONOCIDO';
+      }
     });
   </script>
-  <script>
-    // === Configura tu API pública. "" = mismo origen ===
-    const API_BASE = "https://logistica-inversa.onrender.com"; // URL pública de tu API en Render
-
-    const $ = (id) => document.getElementById(id);
-    const vibrate = (ms) => (navigator.vibrate ? navigator.vibrate(ms) : null);
-
-    $('apiBase').textContent = API_BASE || 'mismo origen';
-    ...
-</script>
-
 </body>
 </html>
