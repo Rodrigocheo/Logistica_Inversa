@@ -52,76 +52,87 @@
     </div>
   </div>
 
- <script>
-  const API_BASE = "https://logistica-inversa.onrender.com";
-  const $ = (id) => document.getElementById(id);
-  const vibrate = (ms) => navigator.vibrate?.(ms);
+  <script>
+    const API_BASE = "https://logistica-inversa.onrender.com";
+    const $ = id => document.getElementById(id);
+    const vibrate = ms => navigator.vibrate?.(ms);
 
-  // ESCANEAR CÓDIGO
-  let scanning = false;
-  const codeReader = new ZXing.BrowserBarcodeReader();
-  $('escanear').addEventListener('click', async () => {
-    if (scanning) return;
-    scanning = true;
-    $('preview').style.display = 'block';
+    // ESCANEAR
+    let scanning = false;
+    const codeReader = new ZXing.BrowserBarcodeReader();
+    $('escanear').addEventListener('click', async () => {
+      if (scanning) return;
+      scanning = true;
+      $('preview').style.display = 'block';
 
-    try {
-      const result = await codeReader.decodeOnceFromVideoDevice(undefined, 'preview');
-      $('codigo').value = result.text;
-      $('preview').style.display = 'none';
-      scanning = false;
-      vibrate(50);
-      cargarDescripcion(result.text); // 🟢 Obtener descripción automáticamente
-    } catch (err) {
-      console.error('Error al escanear:', err);
-      $('preview').style.display = 'none';
-      scanning = false;
-      vibrate([50, 50]);
-      alert('No se pudo escanear el código.');
-    }
-  });
-
-  // MOSTRAR DESCRIPCIÓN AUTOMÁTICAMENTE AL ESCRIBIR O ESCANEAR
-  $('codigo').addEventListener('change', () => {
-    const codigo = $('codigo').value.trim();
-    if (codigo) cargarDescripcion(codigo);
-  });
-
-  async function cargarDescripcion(codigo) {
-    try {
-      const res = await fetch(`${API_BASE}/producto/${codigo}`);
-      const data = await res.json();
-      $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
-    } catch {
-      $('descripcion').value = 'DESCONOCIDO';
-    }
-  }
-
-  // GUARDAR REGISTRO
-  $('guardar').addEventListener('click', async () => {
-    const codigo = $('codigo').value.trim();
-    const cantidad = parseInt($('cantidad').value);
-
-    if (!codigo || isNaN(cantidad)) return;
-
-    try {
-      const res = await fetch(`${API_BASE}/scan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo, cantidad, usuario: null })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        const descripcion = data?.saved?.Descripcion || data?.data?.Descripcion || data?.Descripcion || 'DESCONOCIDO';
-        $('descripcion').value = descripcion;
-        new bootstrap.Toast($('#toastOK')).show();
+      try {
+        const result = await codeReader.decodeOnceFromVideoDevice(undefined, 'preview');
+        $('codigo').value = result.text;
+        $('preview').style.display = 'none';
+        scanning = false;
         vibrate(50);
-      } else {
-        alert('Error al guardar');
+        cargarDescripcion(result.text); // mostrar descripción automáticamente
+      } catch (err) {
+        console.error('Error al escanear:', err);
+        $('preview').style.display = 'none';
+        scanning = false;
+        vibrate([50, 50]);
+        alert('No se pudo escanear el código.');
+      }
+    });
+
+    // DESCRIPCIÓN AUTOMÁTICA AL ESCRIBIR CÓDIGO
+    $('codigo').addEventListener('change', () => {
+      const codigo = $('codigo').value.trim();
+      if (codigo) cargarDescripcion(codigo);
+    });
+
+    async function cargarDescripcion(codigo) {
+      try {
+        const res = await fetch(`${API_BASE}/producto/${codigo}`);
+        const data = await res.json();
+        $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
+      } catch {
+        $('descripcion').value = 'DESCONOCIDO';
+      }
+    }
+
+    // GUARDAR
+    $('guardar').addEventListener('click', async () => {
+      const codigo = $('codigo').value.trim();
+      const cantidad = parseInt($('cantidad').value);
+      const usuario = "RF_WEB";
+      const centro = "3157";
+
+      if (!codigo || isNaN(cantidad)) {
+        alert("Debe ingresar código y cantidad válida.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo, cantidad, usuario, centro })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          const descripcion = data?.saved?.Descripcion || data?.data?.Descripcion || data?.Descripcion || 'DESCONOCIDO';
+          $('descripcion').value = descripcion;
+          new bootstrap.Toast($('#toastOK')).show();
+          vibrate(50);
+        } else {
+          alert('Error al guardar (backend): ' + JSON.stringify(data));
+          vibrate([50, 50]);
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error);
+        alert('Error de red o del servidor.');
         vibrate([50, 50]);
       }
-    } catch (error) {
-      console.error('Error al guardar:', error);
-      alert
+    });
+  </script>
+</body>
+</html>
