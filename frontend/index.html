@@ -114,22 +114,30 @@
         async function guardarDatos() {
             const codigo = document.getElementById('codigo').value.trim();
             const cantidad = parseInt(document.getElementById('cantidad').value);
+            const descripcionDiv = document.getElementById('descripcion');
 
-            if (!codigo || isNaN(cantidad)) return alert('Completa todos los campos.');
+            if (!codigo || isNaN(cantidad)) return;
 
-            await fetch('https://logistica-inversa.onrender.com/registro', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ codigo, cantidad })
-            });
+            try {
+                const res = await fetch('https://logistica-inversa.onrender.com/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo, cantidad })
+                });
+                const data = await res.json();
 
-            document.getElementById('codigo').value = '';
-            document.getElementById('cantidad').value = '';
-            document.getElementById('descripcion').textContent = 'DESCONOCIDO';
+                if (data.ok) {
+                    document.getElementById('codigo').value = '';
+                    document.getElementById('cantidad').value = '';
+                    descripcionDiv.textContent = 'DESCONOCIDO';
+                }
+            } catch {
+                // No mostrar mensaje de error
+            }
         }
 
         function escanear() {
-            alert('Función de escáner no implementada aquí.');
+            // Escaneo real puede integrarse aquí (actualmente es decorativo)
         }
     </script>
 </body>
