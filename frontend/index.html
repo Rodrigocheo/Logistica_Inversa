@@ -1,111 +1,136 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Registro de Escaneos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
-      background: #f4f4f4;
-    }
-    label, input, button {
-      display: block;
-      margin: 1rem 0;
-      font-size: 1.2rem;
-    }
-    input, button {
-      padding: 0.5rem;
-      width: 100%;
-    }
-    #descripcion {
-      font-weight: bold;
-      margin-top: -1rem;
-      margin-bottom: 1rem;
-      color: #2a2a2a;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Registro Komatsu – Cummins</title>
+    <style>
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 400px;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h2 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        h2 span.blue {
+            color: #004b8d;
+            font-weight: bold;
+        }
+        h2 span.black {
+            color: #000;
+            font-weight: bold;
+        }
+        input, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #002d74;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background-color: #004b8d;
+        }
+        .label-description {
+            font-size: 14px;
+            text-align: left;
+            margin-top: 12px;
+            color: #444;
+        }
+        .desc-box {
+            background-color: #eee;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .note {
+            font-size: 12px;
+            color: gray;
+            margin-top: 8px;
+        }
+    </style>
 </head>
 <body>
-  <h2>Registro de Escaneos</h2>
-  
-  <label for="codigo">Código del Producto:</label>
-  <input type="text" id="codigo" autofocus />
-  <div id="descripcion"></div>
+    <div class="container">
+        <h2>
+         <span class="blue">Komatsu</span> <span class="black">Cummins</span>
+        </h2>
+        <label for="codigo">Producto (Código)</label>
+        <input type="text" id="codigo" placeholder="1981549540_kr" oninput="buscarDescripcion()">
 
-  <label for="cantidad">Cantidad:</label>
-  <input type="number" id="cantidad" value="1" min="1" />
+        <button onclick="escanear()">📷 Escanear</button>
 
-  <label for="usuario">Usuario:</label>
-  <input type="text" id="usuario" placeholder="Opcional" />
+        <div class="label-description">Descripción</div>
+        <div class="desc-box" id="descripcion">DESCONOCIDO</div>
 
-  <label for="centro">Centro:</label>
-  <input type="text" id="centro" placeholder="Opcional" />
+        <label for="cantidad">Cantidad</label>
+        <input type="number" id="cantidad" placeholder="1">
 
-  <button onclick="registrar()">Guardar</button>
+        <button onclick="guardarDatos()">Guardar</button>
+        <div class="note">Se guardará en línea con API Komatsu – Cummins</div>
+    </div>
 
-  <script>
-    const apiUrl = window.location.origin;
+    <script>
+        async function buscarDescripcion() {
+            const codigo = document.getElementById('codigo').value.trim();
+            const descripcionDiv = document.getElementById('descripcion');
 
-    const codigoInput = document.getElementById("codigo");
-    const descripcionDiv = document.getElementById("descripcion");
+            if (!codigo) {
+                descripcionDiv.textContent = 'DESCONOCIDO';
+                return;
+            }
 
-    codigoInput.addEventListener("change", async () => {
-      const codigo = codigoInput.value.trim();
-      if (!codigo) {
-        descripcionDiv.textContent = "";
-        return;
-      }
+            try {
+                const res = await fetch(`https://logistica-inversa.onrender.com/producto/${codigo}`);
+                if (!res.ok) throw new Error('Error al buscar');
 
-      try {
-        const res = await fetch(`${apiUrl}/producto/${codigo}`);
-        const data = await res.json();
-        if (data.found) {
-          descripcionDiv.textContent = `Descripción: ${data.descripcion}`;
-        } else {
-          descripcionDiv.textContent = "Producto no encontrado.";
+                const data = await res.json();
+                descripcionDiv.textContent = data.descripcion || 'DESCONOCIDO';
+            } catch {
+                descripcionDiv.textContent = 'DESCONOCIDO';
+            }
         }
-      } catch (err) {
-        descripcionDiv.textContent = "Error al consultar descripción.";
-      }
-    });
 
-    async function registrar() {
-      const codigo = document.getElementById("codigo").value.trim();
-      const cantidad = parseInt(document.getElementById("cantidad").value);
-      const usuario = document.getElementById("usuario").value.trim();
-      const centro = document.getElementById("centro").value.trim();
+        async function guardarDatos() {
+            const codigo = document.getElementById('codigo').value.trim();
+            const cantidad = parseInt(document.getElementById('cantidad').value);
 
-      if (!codigo || cantidad < 1) {
-        alert("Debe ingresar un código y una cantidad válida.");
-        return;
-      }
+            if (!codigo || isNaN(cantidad)) return alert('Completa todos los campos.');
 
-      try {
-        const res = await fetch(`${apiUrl}/scan`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            codigo,
-            cantidad,
-            usuario: usuario || null,
-            centro: centro || null
-          })
-        });
+            await fetch('https://logistica-inversa.onrender.com/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo, cantidad })
+            });
 
-        const data = await res.json();
-        if (data.ok) {
-          // Borrar campos y mensaje
-          document.getElementById("codigo").value = "";
-          descripcionDiv.textContent = "";
-          document.getElementById("cantidad").value = 1;
+            document.getElementById('codigo').value = '';
+            document.getElementById('cantidad').value = '';
+            document.getElementById('descripcion').textContent = 'DESCONOCIDO';
         }
-      } catch (err) {
-        console.error("Error al guardar:", err);
-      }
-    }
-  </script>
+
+        function escanear() {
+            alert('Función de escáner no implementada aquí.');
+        }
+    </script>
 </body>
 </html>
