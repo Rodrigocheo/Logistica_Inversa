@@ -1,144 +1,131 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Registro Komatsu – Cummins</title>
-    <style>
-        body {
-            background-color: #f4f4f4;
-            font-family: Arial, sans-serif;
-        }
-        .container {
-            max-width: 400px;
-            margin: 30px auto;
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 0 12px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        h2 {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        h2 span.blue {
-            color: #004b8d;
-            font-weight: bold;
-        }
-        h2 span.black {
-            color: #000;
-            font-weight: bold;
-        }
-        input, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #002d74;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-        button:hover {
-            background-color: #004b8d;
-        }
-        .label-description {
-            font-size: 14px;
-            text-align: left;
-            margin-top: 12px;
-            color: #444;
-        }
-        .desc-box {
-            background-color: #eee;
-            font-weight: bold;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .note {
-            font-size: 12px;
-            color: gray;
-            margin-top: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KOMATSU · Cummins – RF Escáner</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f9f9f9; font-family: sans-serif; }
+    .card { max-width: 480px; margin: 2rem auto; border-radius: 1rem; box-shadow: 0 0 10px #ccc; }
+    .btn-primary { background-color: #002D72; border: none; }
+    .btn-primary:hover { background-color: #001F4D; }
+    .logo-title { text-align: center; font-size: 1.4rem; font-weight: bold; color: #002D72; padding: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
+    .logo-title span { color: black; font-weight: 600; }
+    .input-group-text { background: #eaeaea; }
+    #descripcion { background: #f1f1f1; color: #333; font-weight: bold; }
+    #preview { display: none; width: 100%; border-radius: 10px; margin-bottom: 1rem; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>
-         <span class="blue">Komatsu</span> <span class="black">Cummins</span>
-        </h2>
-        <label for="codigo">Producto (Código)</label>
-        <input type="text" id="codigo" placeholder="1981549540_kr" oninput="buscarDescripcion()">
-
-        <button onclick="escanear()">📷 Escanear</button>
-
-        <div class="label-description">Descripción</div>
-        <div class="desc-box" id="descripcion">DESCONOCIDO</div>
-
-        <label for="cantidad">Cantidad</label>
-        <input type="number" id="cantidad" placeholder="1">
-
-        <button onclick="guardarDatos()">Guardar</button>
-        <div class="note">Se guardará en línea con API Komatsu – Cummins</div>
+  <div class="card p-4">
+    <div class="logo-title">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/3/38/Komatsu_logo.svg" alt="Komatsu" height="30">
+      <span>Cummins</span>
     </div>
 
-    <script>
-        async function buscarDescripcion() {
-            const codigo = document.getElementById('codigo').value.trim();
-            const descripcionDiv = document.getElementById('descripcion');
+    <label for="codigo">Producto (Código)</label>
+    <input id="codigo" class="form-control mb-2" placeholder="Escanee o escriba" autofocus>
 
-            if (!codigo) {
-                descripcionDiv.textContent = 'DESCONOCIDO';
-                return;
-            }
+    <div class="d-flex gap-2 mb-2">
+      <button id="escanear" class="btn btn-outline-secondary w-50">📷 Escanear</button>
+    </div>
 
-            try {
-                const res = await fetch(`https://logistica-inversa.onrender.com/producto/${codigo}`);
-                if (!res.ok) throw new Error('Error al buscar');
+    <video id="preview" playsinline></video>
 
-                const data = await res.json();
-                descripcionDiv.textContent = data.descripcion || 'DESCONOCIDO';
-            } catch {
-                descripcionDiv.textContent = 'DESCONOCIDO';
-            }
+    <label for="descripcion">Descripción</label>
+    <input id="descripcion" class="form-control mb-2" disabled value="DESCONOCIDO">
+
+    <label for="cantidad">Cantidad</label>
+    <input id="cantidad" class="form-control mb-3" type="number" value="1">
+
+    <button id="guardar" class="btn btn-primary w-100">Guardar</button>
+
+    <small class="text-muted mt-2 d-block text-center">Se guardará en línea con API Komatsu – Cummins</small>
+  </div>
+
+  <div id="toastOK" class="position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-success border-0" role="alert">
+    <div class="d-flex">
+      <div class="toast-body">Guardado</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js"></script>
+  <script>
+    const API_BASE = "https://logistica-inversa.onrender.com";
+    const $ = (id) => document.getElementById(id);
+    const vibrate = (ms) => navigator.vibrate?.(ms);
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+
+    async function actualizarDescripcion(codigo) {
+      try {
+        const res = await fetch(`${API_BASE}/producto/${codigo}`);
+        const data = await res.json();
+        $('descripcion').value = data.descripcion || 'DESCONOCIDO';
+      } catch {
+        $('descripcion').value = 'DESCONOCIDO';
+      }
+    }
+
+    $('codigo').addEventListener('change', () => {
+      const codigo = $('codigo').value.trim();
+      if (codigo) actualizarDescripcion(codigo);
+    });
+
+    $('guardar').addEventListener('click', async () => {
+      const codigo = $('codigo').value.trim();
+      const cantidad = parseInt($('cantidad').value);
+      if (!codigo || isNaN(cantidad)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ codigo, cantidad, usuario: null })
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
+          new bootstrap.Toast($('#toastOK')).show();
+          vibrate(50);
+        } else {
+          alert('Error al guardar');
+        }
+      } catch (err) {
+        alert('Error al guardar');
+        vibrate([50, 50]);
+      }
+    });
+
+    $('escanear').addEventListener('click', async () => {
+      try {
+        const devices = await codeReader.listVideoInputDevices();
+        let selectedDeviceId = devices[0]?.deviceId;
+
+        for (const device of devices) {
+          if (/back|rear|environment/i.test(device.label)) {
+            selectedDeviceId = device.deviceId;
+            break;
+          }
         }
 
-        async function guardarDatos() {
-            const codigo = document.getElementById('codigo').value.trim();
-            const cantidad = parseInt(document.getElementById('cantidad').value);
-            const descripcionDiv = document.getElementById('descripcion');
+        await codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
+          if (result) {
+            $('codigo').value = result.text;
+            $('preview').style.display = 'none';
+            codeReader.reset();
+            actualizarDescripcion(result.text);
+          }
+        });
 
-            if (!codigo || isNaN(cantidad)) return;
-
-            try {
-                const res = await fetch('https://logistica-inversa.onrender.com/registro', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codigo, cantidad })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    document.getElementById('codigo').value = '';
-                    document.getElementById('cantidad').value = '';
-                    descripcionDiv.textContent = 'DESCONOCIDO';
-                }
-            } catch {
-                // No mostrar mensaje de error
-            }
-        }
-
-        function escanear() {
-            // Escaneo real puede integrarse aquí (actualmente es decorativo)
-        }
-    </script>
+        $('preview').style.display = 'block';
+      } catch (err) {
+        alert('No se pudo acceder a la cámara');
+      }
+    });
+  </script>
 </body>
 </html>
