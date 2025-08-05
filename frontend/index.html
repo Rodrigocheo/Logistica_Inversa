@@ -14,7 +14,7 @@
     .logo-title span { color: black; font-weight: 600; }
     .input-group-text { background: #eaeaea; }
     #descripcion { background: #f1f1f1; color: #333; font-weight: bold; }
-    #preview { display: none; width: 100%; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 1rem; }
+    #preview { display: none; width: 100%; border-radius: 10px; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
@@ -31,7 +31,7 @@
       <button id="escanear" class="btn btn-outline-secondary w-50">📷 Escanear</button>
     </div>
 
-    <video id="preview"></video>
+    <video id="preview" playsinline></video>
 
     <label for="descripcion">Descripción</label>
     <input id="descripcion" class="form-control mb-2" disabled value="DESCONOCIDO">
@@ -46,15 +46,18 @@
 
   <div id="toastOK" class="position-fixed bottom-0 end-0 m-3 toast align-items-center text-bg-success border-0" role="alert">
     <div class="d-flex">
-      <div class="toast-body">Guardado correctamente.</div>
+      <div class="toast-body">Guardado</div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.18.6/umd/index.min.js"></script>
   <script>
     const API_BASE = "https://logistica-inversa.onrender.com";
     const $ = (id) => document.getElementById(id);
     const vibrate = (ms) => navigator.vibrate?.(ms);
+    const codeReader = new ZXing.BrowserMultiFormatReader();
 
     $('guardar').addEventListener('click', async () => {
       const codigo = $('codigo').value.trim();
@@ -69,14 +72,13 @@
           body: JSON.stringify({ codigo, cantidad, usuario: null })
         });
         const data = await res.json();
-        if (data.saved) {
-          $('descripcion').value = data.saved.Descripcion || 'DESCONOCIDO';
-          new bootstrap.Toast($('#toastOK')).show();
-          vibrate(50);
-        }
+
+        $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
+        new bootstrap.Toast($('#toastOK')).show();
+        vibrate(50);
       } catch (err) {
         alert('Error al guardar');
-        vibrate([50,50]);
+        vibrate([50, 50]);
       }
     });
 
@@ -91,25 +93,25 @@
         $('descripcion').value = 'DESCONOCIDO';
       }
     });
-  </script>
-
-  <!-- 📷 ESCÁNER INTEGRADO -->
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
-  <script>
-    const codeReader = new ZXing.BrowserMultiFormatReader();
 
     $('escanear').addEventListener('click', async () => {
       try {
         const devices = await codeReader.listVideoInputDevices();
-        const selectedDeviceId = devices[0]?.deviceId;
+        let selectedDeviceId = devices[0]?.deviceId;
 
-        codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
+        for (const device of devices) {
+          if (/back|rear|environment/i.test(device.label)) {
+            selectedDeviceId = device.deviceId;
+            break;
+          }
+        }
+
+        await codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
           if (result) {
             $('codigo').value = result.text;
             $('preview').style.display = 'none';
             codeReader.reset();
 
-            // Buscar descripción automáticamente
             fetch(`${API_BASE}/producto/${result.text}`)
               .then(res => res.json())
               .then(data => {
