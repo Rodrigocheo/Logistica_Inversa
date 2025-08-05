@@ -14,6 +14,7 @@
     .logo-title span { color: black; font-weight: 600; }
     .input-group-text { background: #eaeaea; }
     #descripcion { background: #f1f1f1; color: #333; font-weight: bold; }
+    #preview { display: none; width: 100%; border: 1px solid #ccc; border-radius: 10px; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
@@ -29,6 +30,8 @@
     <div class="d-flex gap-2 mb-2">
       <button id="escanear" class="btn btn-outline-secondary w-50">📷 Escanear</button>
     </div>
+
+    <video id="preview"></video>
 
     <label for="descripcion">Descripción</label>
     <input id="descripcion" class="form-control mb-2" disabled value="DESCONOCIDO">
@@ -89,5 +92,40 @@
       }
     });
   </script>
+
+  <!-- 📷 ESCÁNER INTEGRADO -->
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script>
+    const codeReader = new ZXing.BrowserMultiFormatReader();
+
+    $('escanear').addEventListener('click', async () => {
+      try {
+        const devices = await codeReader.listVideoInputDevices();
+        const selectedDeviceId = devices[0]?.deviceId;
+
+        codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
+          if (result) {
+            $('codigo').value = result.text;
+            $('preview').style.display = 'none';
+            codeReader.reset();
+
+            // Buscar descripción automáticamente
+            fetch(`${API_BASE}/producto/${result.text}`)
+              .then(res => res.json())
+              .then(data => {
+                $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
+              })
+              .catch(() => {
+                $('descripcion').value = 'DESCONOCIDO';
+              });
+          }
+        });
+
+        $('preview').style.display = 'block';
+      } catch (err) {
+        alert('No se pudo acceder a la cámara');
+      }
+    });
+  </script>
 </body>
-</html> 
+</html>
