@@ -91,8 +91,18 @@
         if (data.ok) {
           $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
           $('codigo').value = ''; // Limpia código
-          $('mensajeRegistro').style.display = 'block';
-setTimeout(() => $('mensajeRegistro').style.display = 'none', 2000);
+          $('codigo').focus();
+
+         const mensaje = $('mensajeRegistro');
+mensaje.textContent = '✅ REGISTRADO';
+mensaje.style.display = 'block';
+mensaje.style.opacity = 1;
+
+// Desvanecer suavemente después de 2 segundos
+setTimeout(() => {
+  mensaje.style.opacity = 0;
+  setTimeout(() => mensaje.style.display = 'none', 500);
+}, 2000);
 
           new bootstrap.Toast($('#toastOK')).show();
           vibrate(50);
