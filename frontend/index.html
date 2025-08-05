@@ -13,6 +13,7 @@
     .logo-title { text-align: center; font-size: 1.4rem; font-weight: bold; color: #002D72; padding: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
     .logo-title span { color: black; font-weight: 600; }
     .input-group-text { background: #eaeaea; }
+    #descripcion { background: #f1f1f1; color: #333; font-weight: bold; }
     #preview { display: none; width: 100%; height: auto; max-height: 300px; border-radius: 10px; margin-bottom: 1rem; }
   </style>
 </head>
@@ -38,6 +39,7 @@
     <button id="guardar" class="btn btn-primary w-100">Guardar</button>
     <p id="mensajeRegistro" class="text-success text-center fw-bold" style="display:none;">REGISTRADO</p>
 
+
     <small class="text-muted mt-2 d-block text-center">Se guardará en línea con API Komatsu – Cummins</small>
   </div>
 
@@ -56,6 +58,21 @@
     const vibrate = (ms) => navigator.vibrate?.(ms);
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
+    async function actualizarDescripcion(codigo) {
+      try {
+        const res = await fetch(`${API_BASE}/producto/${codigo}`);
+        const data = await res.json();
+        $('descripcion').value = data.descripcion || 'DESCONOCIDO';
+      } catch {
+        $('descripcion').value = 'DESCONOCIDO';
+      }
+    }
+
+    $('codigo').addEventListener('change', () => {
+      const codigo = $('codigo').value.trim();
+      if (codigo) actualizarDescripcion(codigo);
+    });
+
     $('guardar').addEventListener('click', async () => {
       const codigo = $('codigo').value.trim();
       const cantidad = parseInt($('cantidad').value);
@@ -67,14 +84,13 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ codigo, cantidad, usuario: null })
         });
-
         const data = await res.json();
 
         if (data.ok) {
-          $('codigo').value = ''; // Limpiar campo
-          $('mensajeRegistro').textContent = 'REGISTRADO';
+          $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
+          $('codigo').value = ''; // Limpia código
           $('mensajeRegistro').style.display = 'block';
-          setTimeout(() => $('mensajeRegistro').style.display = 'none', 2000);
+setTimeout(() => $('mensajeRegistro').style.display = 'none', 2000);
 
           new bootstrap.Toast($('#toastOK')).show();
           vibrate(50);
@@ -100,13 +116,14 @@
           }
         }
 
-        $('preview').style.display = 'block';
+        $('preview').style.display = 'block'; // Mostrar antes de escanear
 
         await codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
           if (result) {
             $('codigo').value = result.text;
             $('preview').style.display = 'none';
             codeReader.reset();
+            actualizarDescripcion(result.text);
           }
         });
 
