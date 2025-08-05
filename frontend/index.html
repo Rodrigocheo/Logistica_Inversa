@@ -37,6 +37,8 @@
     <input id="cantidad" class="form-control mb-3" type="number" value="1">
 
     <button id="guardar" class="btn btn-primary w-100">Guardar</button>
+    <p id="mensajeRegistro" class="text-success text-center fw-bold" style="display:none;">REGISTRADO</p>
+
 
     <small class="text-muted mt-2 d-block text-center">Se guardará en línea con API Komatsu – Cummins</small>
   </div>
@@ -87,6 +89,9 @@
         if (data.ok) {
           $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
           $('codigo').value = ''; // Limpia código
+          $('mensajeRegistro').style.display = 'block';
+setTimeout(() => $('mensajeRegistro').style.display = 'none', 2000);
+
           new bootstrap.Toast($('#toastOK')).show();
           vibrate(50);
         } else {
