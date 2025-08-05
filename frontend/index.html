@@ -87,17 +87,19 @@
         });
         const data = await res.json();
 
-        if (data.ok) {
-          $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
-          new bootstrap.Toast($('#toastOK')).show();
-          vibrate(50);
-        } else {
-          alert('Error al guardar');
-        }
-      } catch (err) {
-        alert('Error al guardar');
-        vibrate([50, 50]);
-      }
+     if (data.ok) {
+  $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
+  $('codigo').value = ''; // ✅ Limpia el campo de código
+  new bootstrap.Toast($('#toastOK')).show();
+  vibrate(50);
+} else {
+  console.error('Error en respuesta:', data); // ✅ Log interno
+}
+
+      }} catch (err) {
+  console.error('Error al guardar:', err); // ✅ Log interno, sin alert
+  vibrate([50, 50]);
+}
     });
 
     $('escanear').addEventListener('click', async () => {
