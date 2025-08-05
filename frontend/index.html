@@ -59,10 +59,24 @@
     const vibrate = (ms) => navigator.vibrate?.(ms);
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
+    async function actualizarDescripcion(codigo) {
+      try {
+        const res = await fetch(`${API_BASE}/producto/${codigo}`);
+        const data = await res.json();
+        $('descripcion').value = data.descripcion || 'DESCONOCIDO';
+      } catch {
+        $('descripcion').value = 'DESCONOCIDO';
+      }
+    }
+
+    $('codigo').addEventListener('change', () => {
+      const codigo = $('codigo').value.trim();
+      if (codigo) actualizarDescripcion(codigo);
+    });
+
     $('guardar').addEventListener('click', async () => {
       const codigo = $('codigo').value.trim();
       const cantidad = parseInt($('cantidad').value);
-
       if (!codigo || isNaN(cantidad)) return;
 
       try {
@@ -73,24 +87,16 @@
         });
         const data = await res.json();
 
-        $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
-        new bootstrap.Toast($('#toastOK')).show();
-        vibrate(50);
+        if (data.ok) {
+          $('descripcion').value = data.saved?.Descripcion || 'DESCONOCIDO';
+          new bootstrap.Toast($('#toastOK')).show();
+          vibrate(50);
+        } else {
+          alert('Error al guardar');
+        }
       } catch (err) {
         alert('Error al guardar');
         vibrate([50, 50]);
-      }
-    });
-
-    $('codigo').addEventListener('change', async () => {
-      const codigo = $('codigo').value.trim();
-      if (!codigo) return;
-      try {
-        const res = await fetch(`${API_BASE}/producto/${codigo}`);
-        const data = await res.json();
-        $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
-      } catch {
-        $('descripcion').value = 'DESCONOCIDO';
       }
     });
 
@@ -111,15 +117,7 @@
             $('codigo').value = result.text;
             $('preview').style.display = 'none';
             codeReader.reset();
-
-            fetch(`${API_BASE}/producto/${result.text}`)
-              .then(res => res.json())
-              .then(data => {
-                $('descripcion').value = data.Descripcion || 'DESCONOCIDO';
-              })
-              .catch(() => {
-                $('descripcion').value = 'DESCONOCIDO';
-              });
+            actualizarDescripcion(result.text);
           }
         });
 
